@@ -152,6 +152,22 @@ function makeOriginFixture(): { repo: string; cleanup: () => void } {
       "run-root-completed",
       null
     ),
+    task(
+      "cycle-worker",
+      "worker",
+      "running",
+      "agent-cycle-worker",
+      "run-cycle-worker",
+      "agent-cycle-parent"
+    ),
+    task(
+      "cycle-parent",
+      "worker",
+      "handed-off",
+      "agent-cycle-parent",
+      "run-cycle-parent",
+      "agent-cycle-worker"
+    ),
   ]);
 
   return {
@@ -171,6 +187,7 @@ describe("tree traversal", () => {
       });
 
       expect(victims.map(victim => victim.taskName).sort()).toEqual([
+        "cycle-worker",
         "handed-off-control",
         "handed-off-worker",
         "root-worker",
@@ -178,6 +195,7 @@ describe("tree traversal", () => {
         "unrelated-worker",
       ]);
       expect(victims.map(victim => victim.agentId).sort()).toEqual([
+        "agent-cycle-worker",
         "agent-handed-control",
         "agent-handed-worker",
         "agent-root",
@@ -209,9 +227,49 @@ describe("tree traversal", () => {
           victim => victim.taskName
         )
       ).toEqual(["running-planner", "unrelated-worker"]);
+      expect(
+        filterVictimsToSubtree(victims, "agent-cycle-parent").map(
+          victim => victim.taskName
+        )
+      ).toEqual(["cycle-worker"]);
+      expect(filterVictimsToSubtree(victims, "agent-cycle-unknown")).toEqual(
+        []
+      );
       expect(filterVictimsToSubtree(victims, "missing-agent")).toEqual([]);
     } finally {
       fixture.cleanup();
     }
+  });
+
+  test("keeps direct parent filtering compatible without ancestry metadata", () => {
+    const victims = [
+      {
+        taskName: "parent",
+        agentId: "parent-agent",
+        runId: "parent-run",
+        branch: "main",
+        parentAgentId: null,
+      },
+      {
+        taskName: "child",
+        agentId: "child-agent",
+        runId: "child-run",
+        branch: "main",
+        parentAgentId: "parent-agent",
+      },
+      {
+        taskName: "sibling",
+        agentId: "sibling-agent",
+        runId: "sibling-run",
+        branch: "main",
+        parentAgentId: "other-agent",
+      },
+    ];
+
+    expect(
+      filterVictimsToSubtree(victims, "parent-agent").map(
+        victim => victim.taskName
+      )
+    ).toEqual(["parent", "child"]);
   });
 });
