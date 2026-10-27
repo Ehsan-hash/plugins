@@ -100,7 +100,14 @@ function runCase(useExplicitTlc: boolean) {
 
     const result = spawnSync(
       process.execPath,
-      [cli, path.join(fixture, "MediaPlayer.tla"), "--out", out],
+      [
+        cli,
+        path.join(fixture, "MediaPlayer.tla"),
+        "--view",
+        path.join(fixture, "view.mjs"),
+        "--out",
+        out,
+      ],
       { cwd: root, encoding: "utf8", timeout: 60_000, env },
     );
 
