@@ -62,7 +62,7 @@ esac
 }
 
 function runCase(useExplicitTlc: boolean) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "statechart-tool-paths-"));
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "statechart-tool-paths-")));
   try {
     const fixture = path.join(root, "MediaPlayer");
     fs.cpSync(path.join(corpus, "MediaPlayer"), fixture, { recursive: true });
